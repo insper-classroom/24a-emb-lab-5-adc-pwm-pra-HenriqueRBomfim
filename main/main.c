@@ -32,10 +32,10 @@ void x_task(void *p) {
         adc_select_input(1); // Select ADC input 1 (GPIO27)
         result = adc_read();
         result = ((result * conversion_factor)-2047)/8;
-        if (30 > result > - 30){
+        if (result > -30 && result < 30){
             result = 0;
         }
-        printf("Valor em x: %f V\n", result);
+        printf("Valor em x: %d V\n", result);
         adc_t data;
         data.axis = 1;
         data.val = result;
@@ -56,10 +56,10 @@ void y_task(void *p) {
         adc_select_input(0); // Select ADC input 0 (GPIO26)
         result = adc_read();
         result = ((result * conversion_factor)-2047)/8;
-        if (30 > result > - 30){
+        if (result > -30 && result < 30){
             result = 0;
         }
-        printf("Valor em y: %f V\n", result);
+        printf("Valor em y: %d V\n", result);
         adc_t data;
         data.axis = 0;
         data.val = result;
@@ -68,11 +68,24 @@ void y_task(void *p) {
     }
 }
 
+void write_package(adc_t data) {
+    int val = data.val;
+    int msb = val >> 8;
+    int lsb = val & 0xFF ;
+
+    uart_putc_raw(uart0, data.axis);
+    uart_putc_raw(uart0, lsb);
+    uart_putc_raw(uart0, msb);
+    uart_putc_raw(uart0, -1);
+}
+
 void uart_task(void *p) {
     adc_t data;
 
     while (1) {
-        xQueueReceive(xQueueAdc, &data, portMAX_DELAY);
+        if (xQueueReceive(xQueueAdc, &data, portMAX_DELAY) == pdTRUE) {
+            write_package(data);
+        }
     }
 }
 
