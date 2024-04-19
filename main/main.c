@@ -88,7 +88,7 @@ void uart_task(void *p) {
     }
 }
 
-int main() {
+ int main() {
     stdio_init_all();
 
     xQueueAdc = xQueueCreate(32, sizeof(adc_t));
